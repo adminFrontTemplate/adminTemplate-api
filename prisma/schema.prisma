@@ -10,24 +10,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Article {
-  id          Int      @id @default(autoincrement())
-  title       String   @unique
-  description String?
-  body        String
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  author      User?    @relation(fields: [authorId], references: [id])
-  authorId    Int?
-}
-
 model User {
   id        Int       @id @default(autoincrement())
   name      String?
   email     String    @unique
+  phone     String?
   password  String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  articles  Article[]
+  roleId        Int?
+  role          Role?     @relation(fields: [roleId], references: [id])
+  irreplaceable      Boolean  @default(false)
+}
+
+
+model Role {
+  id                 Int       @id @default(autoincrement())
+  name               String   @unique
+  PermissionsOnRoles PermissionsOnRoles[]
+  User               User[]
+  irreplaceable      Boolean  @default(false)
+}
+
+model Permission {
+  id                 Int       @id @default(autoincrement())
+  parentCode         Int?
+  name               String
+  code               Int    @unique
+  PermissionsOnRoles PermissionsOnRoles[]
+}
+
+model PermissionsOnRoles {
+  role         Role       @relation(fields: [roleId], references: [id])
+  roleId       Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  permissionId Int
+  createdAt   DateTime  @default(now())
+
+  @@id([roleId, permissionId])
 }

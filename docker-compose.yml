@@ -4,9 +4,10 @@ services:
   postgres:
     image: postgres:13.5
     restart: always
+    container_name: admin-template
     environment:
-      - POSTGRES_USER=myuser
-      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_USER=adminuser
+      - POSTGRES_PASSWORD=test123456
     volumes:
       - postgres:/var/lib/postgresql/data
     ports:
