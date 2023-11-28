@@ -13,5 +13,16 @@ services:
     ports:
       - '5432:5432'
 
+  redis:
+    image: "redis:latest"
+    container_name: admin-redis-container
+    ports:
+      - "6379:6379"
+    environment:
+      REDIS_PASSWORD: "test123456"
+    volumes:
+      - redis_data:/data
+
 volumes:
   postgres:
+  redis_data:

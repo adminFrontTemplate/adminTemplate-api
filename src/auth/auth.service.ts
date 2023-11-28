@@ -10,10 +10,17 @@ import { AuthEntity } from './entity/auth.entity';
 import { UserEntity } from 'src/users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { EmailNotFound } from 'src/type/auth';
+import { Email } from 'src/lib/email/EmailTool';
+import { emailType } from 'src/lib/email/config';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+    private cacheService: CacheService,
+  ) {}
 
   async login(email: string, password: string): Promise<AuthEntity> {
     // Step 1: Fetch a user with the given email
@@ -43,6 +50,7 @@ export class AuthService {
     password: string,
     name: string,
     phone: string,
+    code: string,
   ): Promise<UserEntity> {
     const user = await this.prisma.user.findUnique({ where: { email: email } });
 
@@ -50,7 +58,21 @@ export class AuthService {
       throw new UnauthorizedException('当前用户已存在');
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const registerCode = await this.cacheService.get(
+      `${email}-${emailType['register']}`,
+    );
+
+    if (+registerCode !== +code) {
+      throw new UnauthorizedException('验证码不正确');
+    }
+
+    const hashedPassword = await bcrypt.hash(
+      password,
+      +process.env.ROUNDSOFHASHING,
+    );
+    const role = await this.prisma.role.findUnique({
+      where: { name: 'OrdinaryUser' },
+    });
 
     const newUser = await this.prisma.user.create({
       data: {
@@ -58,6 +80,7 @@ export class AuthService {
         password: hashedPassword,
         name,
         phone,
+        role: { connect: { id: role.id } },
       },
     });
 
@@ -74,5 +97,32 @@ export class AuthService {
     return {
       message: 'user not found',
     };
+  }
+
+  async sendEmail(email: string, type = 'register') {
+    if (type !== 'register') {
+      const user = await this.prisma.user.findUnique({
+        where: { email: email },
+      });
+
+      if (!user) {
+        return 'email 不存在';
+      }
+    }
+
+    try {
+      const code = await new Email().send({
+        email: email,
+        subject: 'adminTemplate - 欢迎注册',
+      });
+
+      const codeType = emailType[type] || emailType['register'];
+
+      await this.cacheService.set(`${email}-${codeType}`, code, 5 * 60);
+
+      return code;
+    } catch (error) {
+      return error;
+    }
   }
 }

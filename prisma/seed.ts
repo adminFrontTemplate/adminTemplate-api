@@ -5,7 +5,7 @@ import { permissions } from './permisssion/meunPromission';
 // initialize the Prisma Client
 const prisma = new PrismaClient();
 
-const roundsOfHashing = 10;
+const ordinaryUserList = [10000, 10001];
 
 interface Permission {
   connect: {
@@ -18,11 +18,22 @@ interface AdminRole {
 }
 
 async function main() {
-  // create two dummy users
-  const password = await bcrypt.hash('Test123456', roundsOfHashing);
-  // const passwordAlex = await bcrypt.hash('password-alex', roundsOfHashing);
+  const password = await bcrypt.hash(
+    'test123456',
+    +process.env.ROUNDSOFHASHING,
+  );
 
+  // role
   const adminRolePermissions: AdminRole[] = [];
+  const OrdinaryUserPermissions = ordinaryUserList.map((permission) => {
+    return {
+      permission: {
+        connect: {
+          code: permission,
+        },
+      },
+    };
+  });
   for (const permission of permissions) {
     adminRolePermissions.push({
       permission: {
@@ -31,6 +42,7 @@ async function main() {
         },
       },
     });
+
     await prisma.permission.upsert({
       where: { code: permission.code },
       update: {
@@ -60,6 +72,22 @@ async function main() {
     },
   });
 
+  const roleOrdinaryAdmin = await prisma.role.upsert({
+    where: { name: 'OrdinaryUser' },
+    update: {
+      name: 'OrdinaryUser',
+    },
+    create: {
+      name: 'OrdinaryUser',
+      irreplaceable: true,
+      PermissionsOnRoles: {
+        create: [...OrdinaryUserPermissions],
+      },
+    },
+  });
+
+  // user
+
   const userAdmin = await prisma.user.upsert({
     where: { email: 'kris.admin@test.com' },
     update: {
@@ -77,7 +105,7 @@ async function main() {
     },
   });
 
-  console.log(roleAdmin, userAdmin);
+  console.log(roleAdmin, userAdmin, roleOrdinaryAdmin);
 }
 
 // execute the main function
