@@ -40,9 +40,20 @@ export class AuthService {
     }
 
     // Step 3: Generate a JWT token containing the user's ID and return it
+    const accessToken = this.jwtService.sign({ userId: user.id });
+
+    this.cacheService.set(`${email}-token`, accessToken, 7 * 24 * 60 * 60);
+
     return {
-      accessToken: this.jwtService.sign({ userId: user.id }),
+      accessToken,
     };
+  }
+
+  async loginOut(user: UserEntity) {
+    console.log(user, 'user');
+    this.cacheService.del(`${user.email}-token`);
+
+    return '退出登录成功';
   }
 
   async register(

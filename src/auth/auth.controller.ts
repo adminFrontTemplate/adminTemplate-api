@@ -1,6 +1,6 @@
 //src/auth/auth.controller.ts
 
-import { Body, Controller, Post, Get, Query } from '@nestjs/common';
+import { Body, Controller, Post, Get, Query, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   ApiOkResponse,
@@ -20,6 +20,12 @@ export class AuthController {
   @ApiOkResponse({ type: AuthEntity })
   login(@Body() { email, password }: LoginDto) {
     return this.authService.login(email, password);
+  }
+
+  @Post('loginOut')
+  @ApiOkResponse({ type: AuthEntity })
+  loginOut(@Body() {}, @Request() req) {
+    return this.authService.loginOut(req.user);
   }
 
   @Post('register')

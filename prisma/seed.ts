@@ -104,8 +104,6 @@ async function main() {
       roleId: roleAdmin.id,
     },
   });
-
-  console.log(roleAdmin, userAdmin, roleOrdinaryAdmin);
 }
 
 // execute the main function

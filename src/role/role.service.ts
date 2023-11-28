@@ -57,8 +57,6 @@ export class RoleService {
 
     const param = roleId && !isAdminUser ? { id: roleId } : {};
 
-    console.log(isAdminUser, param, roleInfo);
-
     const roles = await this.prisma.role.findMany({
       where: { name: { contains: keyword }, ...param },
       skip: offset,
@@ -73,10 +71,6 @@ export class RoleService {
 
     return roles;
   }
-
-  // findOne(id: number) {
-  //   return `This action returns a #${id} role`;
-  // }
 
   async update(id: number, updateRoleDto: UpdateRoleDto) {
     const { name, permissions } = updateRoleDto;
